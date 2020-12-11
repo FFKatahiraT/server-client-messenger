@@ -12,13 +12,13 @@
 int main(int argc , char *argv[])
 {
     //int opt = 1;
-    int PORT = 8920, max_clients = 30;
+    int PORT = 8925, max_clients = 30;
     int master_socket , addrlen , new_socket , client_socket[max_clients]  , activity, i , valread , sd, search_cli;
-	int max_sd;
+	int max_sd, fd_stdin;
     struct sockaddr_in address;
-    char buffer[1024], name[max_clients][8], name_temp[8], * destination;  //data size
+    char buffer[1024], name[max_clients][8], name_temp[8], * destination, command[5], * message;  //data size
      
-    //set of socket descriptors
+    //set up select()
     fd_set readfds;
      
     //a message
@@ -61,6 +61,8 @@ int main(int argc , char *argv[])
     addrlen = sizeof(address);
     puts("Waiting for connections ...");
     
+    fd_stdin = fileno(stdin);
+
 	while(1) 
     {
         //clear the socket set
@@ -68,6 +70,9 @@ int main(int argc , char *argv[])
  
         //add master socket to set
         FD_SET(master_socket, &readfds);
+        FD_SET(fd_stdin, &readfds);
+        //printf("Enter command: ");
+        fflush(stdout);
         max_sd = master_socket;
 		
         //add child sockets to set
@@ -84,10 +89,17 @@ int main(int argc , char *argv[])
             if(sd > max_sd)
 				max_sd = sd;
         }
- 
+        
         //wait for an activity on one of the sockets , timeout is NULL , so wait indefinitely
         activity = select( max_sd + 1 , &readfds , NULL , NULL , NULL);
-   
+        
+        if(FD_ISSET(fd_stdin, &readfds)){
+            read(fd_stdin, command, 5);
+            /* process command, maybe by sscanf */
+            if (strcmp(command, "quit")){
+                break; /* to terminate loop, since I don't process anything */  
+            }
+        }
         if ((activity < 0) && (errno!=EINTR)) 
         {
             printf("select error");
@@ -133,7 +145,7 @@ int main(int argc , char *argv[])
             if (FD_ISSET( sd , &readfds)) 
             {
                 //Check if it was for closing , and also recieve the incoming message
-                if ((valread = recv( sd , buffer, sizeof(buffer), 0)) == 0)
+                if ((recv( sd , buffer, sizeof(buffer), 0)) == 0)
                 {
                     //Somebody disconnected , get his details and print
                     getpeername(sd , (struct sockaddr*)&address , (socklen_t*)&addrlen);
@@ -147,26 +159,31 @@ int main(int argc , char *argv[])
                 //Echo back the message that came in
                 else
                 {
+                    printf("before strtoc %s\n", buffer);
                     destination = strtok(buffer," :");
+                    printf("after destination %s\n", buffer);
                     for( search_cli = 0 ; search_cli < sizeof(client_socket); search_cli += 1 ){  //find a receiver
-                        printf("%d, name: %s\n", search_cli, name[search_cli]);
-                        if(destination==name[search_cli]){
-                            printf("%s\n", "MATCH");
-                            printf("dest %s\n", destination);
-                            printf("name %s\n", name[search_cli]); 
+                        //printf("%d, name: %s\n", search_cli, name[search_cli]);
+                        if(strcmp(destination, name[search_cli]) == 0){
+                            // printf("%s\n", "MATCH");
+                            // printf("dest %s\n", destination);
+                            // printf("name %s\n", name[search_cli]); 
                             break;
                         }
                     }
-                    if(search_cli==sizeof(client_socket)){
+                    if(search_cli==sizeof(client_socket) || client_socket[search_cli]==0){
                         write(sd , "There is no such receiver" , 26);
                     }
                     else{
+                        message = strtok(buffer, " :");
                         //set the string terminating NULL byte on the end of the data read
-                        buffer[valread] = '\0';
-                        printf("socket %d\n", client_socket[search_cli]);
-                        write(client_socket[search_cli] , buffer , strlen(buffer));
-                        printf("%s\n", "After send");
-                        memset(buffer, 0, valread);
+                        //message[sizeof(message)] = '\0';
+                        //printf("socket %d\n", client_socket[search_cli]);
+                        write(client_socket[search_cli] , message , strlen(message));
+                        printf("after send %s\n", buffer);
+                        memset(buffer, 0, sizeof(buffer));
+                        destination = strtok(NULL, " ");
+                        message = strtok(NULL, " ");
                     }
                 }
             }

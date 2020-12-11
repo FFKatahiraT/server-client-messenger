@@ -9,10 +9,15 @@
 
 int main(int argc , char *argv[])
 {
-	int sock;
+	int sock, fd_stdin;
 	struct sockaddr_in server;
-	char server_reply[2000];
+	char server_reply[2000], message[1024];;
 	
+	//set up select()
+    fd_set readfds;
+	
+	fd_stdin = fileno(stdin);
+
 	//Create socket
 	sock = socket(AF_INET , SOCK_STREAM , 0);
 	if (sock == -1)
@@ -23,7 +28,7 @@ int main(int argc , char *argv[])
 	
 	server.sin_addr.s_addr = inet_addr("127.0.0.1");
 	server.sin_family = AF_INET;
-	server.sin_port = htons( 8920);
+	server.sin_port = htons( 8925);
 
 	//Connect to remote server
 	if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
@@ -38,33 +43,45 @@ int main(int argc , char *argv[])
 
 	while(1)
 	{
-		char receiver[16];
-		char message[1024];
-		//recv(sock , server_reply , 2000 , 0);
-		// printf("Receiver : ");
-		// scanf("%s" , receiver);
-		printf("Enter message : ");
-		scanf("%s" , message);
-
-		//Send some data
-		if( send(sock , message , strlen(message) , 0) >= 0)
-		{
-			//send(sock , message , strlen(message) , 0);
-		}
-		else{
-			puts("Send failed");
-			return 1;			
+		//clear the socket set
+        FD_ZERO(&readfds);
+ 
+        //add to set
+        FD_SET(fd_stdin, &readfds);
+        FD_SET( sock , &readfds);
+        fflush(stdout);
+		
+		printf("%s", "Enter message");
+		select(fd_stdin + 1, &readfds, NULL, NULL, NULL);
+	    
+	    if(FD_ISSET(fd_stdin, &readfds)){  
+	        read(fd_stdin, message, 1024);
+	        
+			if(strcmp(message, "quit") == 0){
+				break;
+			}
+			//Send some data
+			if( send(sock , message , strlen(message) , 0) >= 0)
+			{
+				//send(sock , message , strlen(message) , 0);
+			}
+			else{
+				puts("Send failed");
+				return 1;			
+			}
+			memset(message, 0, sizeof(message));
 		}
 		
-		//Receive a reply from the server
-		if( recv(sock , server_reply , 2000 , 0) < 0)
-		{
-			puts("recv failed");
-			break;
+		if(FD_ISSET(sock, &readfds)){
+			//Receive a reply from the server
+			if( recv(sock , server_reply , 2000 , 0) < 0)
+			{
+				puts("recv failed");
+				break;
+			}
+			puts("Server reply :");
+			puts(server_reply);
 		}
-		
-		puts("Server reply :");
-		puts(server_reply);
 	}
 	
 	close(sock);
