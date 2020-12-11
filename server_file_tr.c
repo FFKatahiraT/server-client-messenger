@@ -10,12 +10,13 @@
 #include <netinet/in.h>
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
 #include <limits.h>
+#include <math.h>
 
 
 int main(int argc , char *argv[])
 {
     //int opt = 1;
-    int PORT = 8938, max_clients = 30, len_message = 1024;
+    int PORT = 8938, max_clients = 8, len_message = 1024;
     int master_socket , addrlen , new_socket , client_socket[max_clients]  , activity, i , valread , sd;
 	int max_sd, fd_stdin, data_lenght;
     struct sockaddr_in address;
@@ -67,6 +68,10 @@ int main(int argc , char *argv[])
     
     fd_stdin = fileno(stdin);
 
+    for(i=0; i<log(2)/log(max_clients); i++){
+        fork();
+    }
+    i=0;
 	while(1) 
     {
         ready:
@@ -101,7 +106,7 @@ int main(int argc , char *argv[])
             read(fd_stdin, command, 5);
             /* process command, maybe by sscanf */
             if (strcmp(command, "quit")){
-                break; /* to terminate loop, since I don't process anything */  
+                return 0; /* to terminate loop, since I don't process anything */  
             }
         }
         if ((activity < 0) && (errno!=EINTR)) 
@@ -177,7 +182,6 @@ int main(int argc , char *argv[])
                         write(sd, "Data lenght is empty", 21);
                         goto ready;
                     }
-                    printf("%s\n", "Here");
                     data_lenght = strtouq(parsed_buffer, &endptr, 10);
                     if(endptr[0] == '\0'){
                         write(sd, "Data lenght is not int", 23);
@@ -197,7 +201,7 @@ int main(int argc , char *argv[])
                         goto ready;
                     }
                     fclose(fp);
-                    printf("ready to send %s\n", message);
+                    //printf("ready to send %s\n", message);
                     write(sd , message , strlen(message)+1);
                     memset(buffer, 0, sizeof(buffer));
                 }
