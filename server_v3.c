@@ -12,11 +12,11 @@
 int main(int argc , char *argv[])
 {
     //int opt = 1;
-    int PORT = 8925, max_clients = 30;
+    int PORT = 8934, max_clients = 30;
     int master_socket , addrlen , new_socket , client_socket[max_clients]  , activity, i , valread , sd, search_cli;
 	int max_sd, fd_stdin;
     struct sockaddr_in address;
-    char buffer[1024], name[max_clients][8], name_temp[8], * destination, command[5], * message;  //data size
+    char buffer[1024], name[max_clients][8], name_temp[8], command[5], * parsed_buffer, *message, *sender;  //data size
      
     //set up select()
     fd_set readfds;
@@ -159,12 +159,10 @@ int main(int argc , char *argv[])
                 //Echo back the message that came in
                 else
                 {
-                    printf("before strtoc %s\n", buffer);
-                    destination = strtok(buffer," :");
-                    printf("after destination %s\n", buffer);
+                    parsed_buffer = strtok(buffer," :");
                     for( search_cli = 0 ; search_cli < sizeof(client_socket); search_cli += 1 ){  //find a receiver
                         //printf("%d, name: %s\n", search_cli, name[search_cli]);
-                        if(strcmp(destination, name[search_cli]) == 0){
+                        if(strcmp(parsed_buffer, name[search_cli]) == 0){
                             // printf("%s\n", "MATCH");
                             // printf("dest %s\n", destination);
                             // printf("name %s\n", name[search_cli]); 
@@ -175,15 +173,21 @@ int main(int argc , char *argv[])
                         write(sd , "There is no such receiver" , 26);
                     }
                     else{
-                        message = strtok(buffer, " :");
+                        parsed_buffer = strtok(NULL, "");
                         //set the string terminating NULL byte on the end of the data read
-                        //message[sizeof(message)] = '\0';
                         //printf("socket %d\n", client_socket[search_cli]);
-                        write(client_socket[search_cli] , message , strlen(message));
-                        printf("after send %s\n", buffer);
+                        // while(parsed_buffer != NULL){
+                        //     strcat(message, parsed_buffer);
+                        //     strcat(message, ":");
+                        //     printf("%s\n", parsed_buffer);
+                        //     parsed_buffer=strtok(NULL, ":");
+                        // }
+                        //printf("%s\n", parsed_buffer);
+                        strcpy(message, name[i]);
+                        strcat(message, ": ");
+                        strcat(message, parsed_buffer);
+                        write(client_socket[search_cli] , message , strlen(message)+1);
                         memset(buffer, 0, sizeof(buffer));
-                        destination = strtok(NULL, " ");
-                        message = strtok(NULL, " ");
                     }
                 }
             }

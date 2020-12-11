@@ -37,7 +37,7 @@ int main(int argc , char *argv[])
 		return 1;
 	}
 	
-	char name[8] = "Annie";
+	char name[8] = "John";
 	send(sock , name, 8 , 0);
 	puts("Connected\n");
 
