@@ -16,7 +16,7 @@
 int main(int argc , char *argv[])
 {
     //int opt = 1;
-    int PORT = 8938, max_clients = 8, len_message = 1024;
+    int PORT = 8940, max_clients = 8, len_message = 1024;
     int master_socket , addrlen , new_socket , client_socket[max_clients]  , activity, i , valread , sd;
 	int max_sd, fd_stdin, data_lenght;
     struct sockaddr_in address;
@@ -68,7 +68,7 @@ int main(int argc , char *argv[])
     
     fd_stdin = fileno(stdin);
 
-    for(i=0; i<log(2)/log(max_clients); i++){
+    for(i=0; i<(log(2)/log(max_clients)+1); i++){
         fork();
     }
     i=0;
@@ -106,7 +106,7 @@ int main(int argc , char *argv[])
             read(fd_stdin, command, 5);
             /* process command, maybe by sscanf */
             if (strcmp(command, "quit")){
-                return 0; /* to terminate loop, since I don't process anything */  
+                exit(0); 
             }
         }
         if ((activity < 0) && (errno!=EINTR)) 
