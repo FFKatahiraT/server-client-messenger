@@ -9,9 +9,9 @@
 
 int main(int argc , char *argv[])
 {
-	int sock, fd_stdin;
+	int sock, fd_stdin, len_message = 1024;
 	struct sockaddr_in server;
-	char server_reply[2000], message[1024];;
+	char server_reply[2000], message[len_message];
 	
 	//set up select()
     fd_set readfds;
@@ -55,28 +55,25 @@ int main(int argc , char *argv[])
 		select(sock + 1, &readfds, NULL, NULL, NULL);
 	    
 	    if(FD_ISSET(fd_stdin, &readfds)){  
-	        read(fd_stdin, message, 1024);
-			if(strcmp(message, "quit") == 0){
+	        read(fd_stdin, message, len_message);
+			if(strcmp(message, "quit") == 10){
+				close(sock);
 				break;
 			}
 			//Send some data
-			if( send(sock , message , strlen(message) , 0) >= 0)
+			if( send(sock , message , strlen(message) , 0) < 0)
 			{
-				//send(sock , message , strlen(message) , 0);
-			}
-			else{
 				puts("Send failed");
-				return 1;			
+				return 1;
 			}
-			memset(message, 0, sizeof(message));
+			memset(message, 0, len_message);
 		}
 		
 		if(FD_ISSET(sock, &readfds)){
 		    //Check if it was for closing , and also recieve the incoming message
-            if ((recv(sock , server_reply , 2000 , 0)) <= 0)
+            if ((recv(sock , server_reply , len_message , 0)) <= 0)
             {
-                printf("Server disconnected");
-                //Close the socket and mark as 0 in list for reuse
+                printf("Server disconnected\n");
                 break;
             }
             else{

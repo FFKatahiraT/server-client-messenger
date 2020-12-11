@@ -157,15 +157,11 @@ int main(int argc , char *argv[])
                 }
                  
                 //Echo back the message that came in
-                else
-                {
+                else{
                     parsed_buffer = strtok(buffer," :");
                     for( search_cli = 0 ; search_cli < sizeof(client_socket); search_cli += 1 ){  //find a receiver
                         //printf("%d, name: %s\n", search_cli, name[search_cli]);
                         if(strcmp(parsed_buffer, name[search_cli]) == 0){
-                            // printf("%s\n", "MATCH");
-                            // printf("dest %s\n", destination);
-                            // printf("name %s\n", name[search_cli]); 
                             break;
                         }
                     }
@@ -174,15 +170,6 @@ int main(int argc , char *argv[])
                     }
                     else{
                         parsed_buffer = strtok(NULL, "");
-                        //set the string terminating NULL byte on the end of the data read
-                        //printf("socket %d\n", client_socket[search_cli]);
-                        // while(parsed_buffer != NULL){
-                        //     strcat(message, parsed_buffer);
-                        //     strcat(message, ":");
-                        //     printf("%s\n", parsed_buffer);
-                        //     parsed_buffer=strtok(NULL, ":");
-                        // }
-                        //printf("%s\n", parsed_buffer);
                         strcpy(message, name[i]);
                         strcat(message, ": ");
                         strcat(message, parsed_buffer);
