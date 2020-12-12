@@ -195,7 +195,7 @@ int main(int argc , char *argv[])
                     strcpy(clients_command, parsed_buffer);
 
                     //printf("%d\n", strcmp(clients_command,"-del"));
-                    if(strcmp(clients_command,"-del")==0){
+                    if(strcmp(clients_command,"-del")==10){
                         if(remove(doc_name)!=0){
                             write(sd, "Unable to delete data", 22);
                             goto ready;
